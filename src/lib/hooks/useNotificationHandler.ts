@@ -32,6 +32,7 @@ type NotificationPayload =
       reason: Exclude<NotificationReason, 'chat-message'>
       uri: string
       subject: string
+      recipientDid: string
     }
   | {
       reason: 'chat-message'
@@ -186,6 +187,17 @@ export function useNotificationsHandler() {
         )
 
         const payload = e.request.trigger.payload as NotificationPayload
+
+        // Username prefix for non chat notifications, if there are multiple accounts
+        if (payload.reason !== 'chat-message') {
+          if (accounts.length > 1) {
+            const account = accounts.find(a => a.did === payload.recipientDid)
+            if (account && e.request.content.body) {
+              e.request.content.body = `@${account.handle}: ${e.request.content.body}`
+            }
+          }
+        }
+
         if (
           payload.reason === 'chat-message' &&
           payload.recipientDid === currentAccount?.did
